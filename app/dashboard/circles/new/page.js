@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { sanitizeCircleForm } from '@/lib/sanitize'
 
 const EMOJIS = ['🤝','🇪🇹','🇲🇽','🇳🇬','🇧🇷','🇮🇳','🇵🇭','🌍','💛','🏡','🌱','⭐']
 
@@ -16,6 +17,7 @@ export default function NewCirclePage() {
   })
 
   const pot = (parseInt(form.contribution_amount) || 0) * (parseInt(form.total_members) || 0)
+
   const fmt = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
 
   const handleCreate = async () => {
@@ -24,8 +26,7 @@ export default function NewCirclePage() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) { setError('Not logged in'); setLoading(false); return }
-
+    // Create circle
     const { data: circle, error: circleError } = await supabase
       .from('circles')
       .insert({
@@ -44,15 +45,14 @@ export default function NewCirclePage() {
 
     if (circleError) { setError(circleError.message); setLoading(false); return }
 
-    const { error: memberError } = await supabase.from('circle_members').insert({
+    // Add creator as member #1 (admin)
+    await supabase.from('circle_members').insert({
       circle_id: circle.id,
       user_id: user.id,
       position: 1,
       role: 'admin',
       payment_status: 'current',
     })
-
-    if (memberError) { setError(memberError.message); setLoading(false); return }
 
     router.push(`/dashboard/circles/${circle.id}?created=1`)
   }
@@ -153,7 +153,7 @@ export default function NewCirclePage() {
           </div>
           {pot > 0 && (
             <div className="p-4 rounded-2xl" style={{ background: '#4A7C6F12', border: '1px solid #4A7C6F30' }}>
-              <p className="text-xs font-semibold tracking-wider" style={{ color: '#4A7C6F' }}>EACH MEMBER RECEIVES</p>
+              <p className="text-xs font-semibold text-sage tracking-wider">EACH MEMBER RECEIVES</p>
               <p className="text-3xl font-bold mt-1" style={{ color: '#4A7C6F', fontFamily: 'DM Serif Display, serif' }}>{fmt(pot)}</p>
               <p className="text-xs text-gray-400 mt-1">{form.total_members} members × {fmt(parseInt(form.contribution_amount))}</p>
             </div>
@@ -170,7 +170,7 @@ export default function NewCirclePage() {
               <p className="text-white font-bold text-xl mt-2" style={{ fontFamily: 'DM Serif Display, serif' }}>{form.name || 'My Circle'}</p>
             </div>
             {[
-              ['Contribution', `${fmt(parseInt(form.contribution_amount)||0)} / ${form.frequency}`],
+              ['Contribution', `${new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(parseInt(form.contribution_amount)||0)} / ${form.frequency}`],
               ['Members', form.total_members],
               ['Total Pot', fmt(pot)],
               ['Duration', `${form.total_members} ${form.frequency === 'Weekly' ? 'weeks' : 'months'}`],
