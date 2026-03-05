@@ -18,23 +18,27 @@ export default async function DashboardLayout({ children }) {
     ? profile.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
     : user.email[0].toUpperCase()
 
+  const trustScore = profile?.trust_score || 70
+
   return (
-    <div className="min-h-screen bg-cream">
-      {/* Top navbar */}
-      <nav className="sticky top-0 z-40 border-b"
-        style={{ background: 'rgba(245,240,232,0.95)', backdropFilter: 'blur(12px)', borderColor: '#EAE3D5' }}>
-        <div className="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <span className="text-xl text-navy">◎</span>
-            <span className="font-bold text-navy text-lg" style={{ fontFamily: 'DM Serif Display, serif' }}>UpCircle</span>
+    <div style={{ minHeight: '100vh', background: '#F5F0E8' }}>
+      <nav style={{
+        position: 'sticky', top: 0, zIndex: 40,
+        background: 'rgba(13,31,60,0.98)',
+        backdropFilter: 'blur(16px)',
+        borderBottom: '1px solid rgba(212,168,67,0.15)',
+        boxShadow: '0 2px 20px rgba(13,31,60,0.3)'
+      }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 20px', height: '60px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #D4A843, #F0C96A)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', color: '#0D1F3C', fontWeight: '900', boxShadow: '0 3px 12px rgba(212,168,67,0.4)' }}>◎</div>
+            <span style={{ fontFamily: 'DM Serif Display, serif', fontSize: '20px', fontWeight: '900', color: '#F5F0E8' }}>UpCircle</span>
           </Link>
-          <div className="flex items-center gap-3">
-            <div className="text-right hidden sm:block">
-              <p className="text-xs text-gray-500 font-medium">{profile?.full_name || user.email}</p>
-              <p className="text-xs font-bold" style={{ color: '#D4A843' }}>Trust Score: {profile?.trust_score || 70}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ background: 'rgba(212,168,67,0.12)', border: '1px solid rgba(212,168,67,0.25)', borderRadius: '100px', padding: '5px 14px', fontSize: '12px', fontWeight: '700', color: '#D4A843' }}>
+              ✦ Trust {trustScore}
             </div>
-            <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold"
-              style={{ background: '#D4A843', color: '#0D1F3C' }}>
+            <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'linear-gradient(135deg, #D4A843, #F0C96A)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '800', color: '#0D1F3C', boxShadow: '0 3px 10px rgba(212,168,67,0.35)' }}>
               {initials}
             </div>
             <LogoutButton />
@@ -42,28 +46,22 @@ export default async function DashboardLayout({ children }) {
         </div>
       </nav>
 
-      {/* Bottom nav for mobile */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 border-t md:hidden"
-        style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(20px)', borderColor: '#EAE3D5' }}>
-        <div className="flex">
-          {[
-            { href: '/dashboard', icon: '⌂', label: 'Home' },
-            { href: '/dashboard/circles', icon: '◎', label: 'Circles' },
-            { href: '/dashboard/activity', icon: '↕', label: 'Activity' },
-            { href: '/dashboard/profile', icon: '◉', label: 'Profile' },
-          ].map(tab => (
-            <Link key={tab.href} href={tab.href}
-              className="flex-1 flex flex-col items-center gap-1 py-3 text-gray-400 hover:text-navy transition-colors">
-              <span className="text-lg">{tab.icon}</span>
-              <span className="text-[10px] font-semibold tracking-wide">{tab.label}</span>
-            </Link>
-          ))}
-        </div>
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 40, background: 'rgba(255,255,255,0.98)', backdropFilter: 'blur(20px)', borderTop: '1px solid #EAE3D5', boxShadow: '0 -4px 24px rgba(13,31,60,0.08)', display: 'flex' }} className="md:hidden">
+        {[
+          { href: '/dashboard', icon: '⌂', label: 'Home' },
+          { href: '/dashboard/circles', icon: '◎', label: 'Circles' },
+          { href: '/dashboard/activity', icon: '↕', label: 'Activity' },
+          { href: '/dashboard/profile', icon: '◉', label: 'Profile' },
+        ].map(tab => (
+          <Link key={tab.href} href={tab.href} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', padding: '10px 0 14px', textDecoration: 'none', color: '#9CA3AF', fontSize: '10px', fontWeight: '700', letterSpacing: '0.5px' }}>
+            <span style={{ fontSize: '20px' }}>{tab.icon}</span>
+            {tab.label}
+          </Link>
+        ))}
       </div>
 
-      {/* Sidebar for desktop */}
-      <div className="max-w-6xl mx-auto flex">
-        <aside className="hidden md:flex flex-col w-56 py-8 px-4 sticky top-16 self-start h-[calc(100vh-4rem)]">
+      <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex' }}>
+        <aside style={{ width: '220px', padding: '28px 16px', position: 'sticky', top: '60px', alignSelf: 'flex-start', height: 'calc(100vh - 60px)', flexShrink: 0 }} className="hidden md:flex md:flex-col">
           {[
             { href: '/dashboard', icon: '⌂', label: 'Home' },
             { href: '/dashboard/circles', icon: '◎', label: 'My Circles' },
@@ -71,15 +69,14 @@ export default async function DashboardLayout({ children }) {
             { href: '/dashboard/activity', icon: '↕', label: 'Activity' },
             { href: '/dashboard/profile', icon: '◉', label: 'Profile' },
           ].map(tab => (
-            <Link key={tab.href} href={tab.href}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-gray-500 hover:text-navy hover:bg-cream-dark transition-all mb-1">
-              <span className="text-base">{tab.icon}</span>
+            <Link key={tab.href} href={tab.href} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: '14px', fontSize: '14px', fontWeight: '600', color: '#6B7A8D', textDecoration: 'none', marginBottom: '4px' }}>
+              <span style={{ fontSize: '18px' }}>{tab.icon}</span>
               {tab.label}
             </Link>
           ))}
         </aside>
 
-        <main className="flex-1 px-4 py-6 pb-24 md:pb-8 max-w-2xl">
+        <main style={{ flex: 1, padding: '28px 20px', paddingBottom: '96px', maxWidth: '680px' }}>
           {children}
         </main>
       </div>
