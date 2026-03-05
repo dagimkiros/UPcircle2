@@ -15,12 +15,25 @@ export default function SignupPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
+
+    // Validate inputs before touching Supabase
+    const { validateFullName, sanitizeEmail, validatePassword } = await import('@/lib/sanitize')
+
+    const nameResult = validateFullName(form.full_name)
+    if (!nameResult.valid) { setError(nameResult.error); setLoading(false); return }
+
+    const cleanEmail = sanitizeEmail(form.email)
+    if (!cleanEmail) { setError('Please enter a valid email address.'); setLoading(false); return }
+
+    const passResult = validatePassword(form.password)
+    if (!passResult.valid) { setError(passResult.error); setLoading(false); return }
+
     const supabase = createClient()
 
     const { data, error: signupError } = await supabase.auth.signUp({
-      email: form.email,
+      email: cleanEmail,
       password: form.password,
-      options: { data: { full_name: form.full_name } }
+      options: { data: { full_name: nameResult.value } }
     })
 
     if (signupError) {
@@ -29,12 +42,12 @@ export default function SignupPage() {
       return
     }
 
-    // Create profile row
+    // Create profile row with sanitized data
     if (data.user) {
       await supabase.from('profiles').upsert({
         id: data.user.id,
-        full_name: form.full_name,
-        email: form.email,
+        full_name: nameResult.value,
+        email: cleanEmail,
         trust_score: 70,
       })
     }

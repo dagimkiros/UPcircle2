@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { sanitizeEmail } from '@/lib/sanitize'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -10,15 +11,41 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [attempts, setAttempts] = useState(0)
 
   const handleLogin = async (e) => {
     e.preventDefault()
     setLoading(true)
     setError('')
+
+    // Client-side rate limiting (5 attempts max)
+    if (attempts >= 5) {
+      setError('Too many failed attempts. Please wait 15 minutes before trying again.')
+      setLoading(false)
+      return
+    }
+
+    // Validate email format
+    const cleanEmail = sanitizeEmail(email)
+    if (!cleanEmail) {
+      setError('Please enter a valid email address.')
+      setLoading(false)
+      return
+    }
+
+    // Basic password check
+    if (!password || password.length < 8) {
+      setError('Password must be at least 8 characters.')
+      setLoading(false)
+      return
+    }
+
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password })
     if (error) {
-      setError(error.message)
+      setAttempts(a => a + 1)
+      // Generic error message — don't reveal if email exists or not
+      setError('Invalid email or password.')
       setLoading(false)
     } else {
       router.push('/dashboard')
