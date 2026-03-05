@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: #D4A843 !important;
+  box-shadow: 0 0 0 3px rgba(212, 168, 67, 0.15);
+}
+
+button:active {
+  transform: scale(0.97);
+}
+
+@layer utilities {
+  .font-serif {
+    font-family: 'DM Serif Display', serif;
+  }
+}
