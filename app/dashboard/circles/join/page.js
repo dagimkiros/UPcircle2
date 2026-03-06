@@ -17,7 +17,7 @@ export default function JoinCirclePage() {
     setLoading(true)
     setError('')
     setCircle(null)
-    const supabase = createClient()
+    const supabase = await createClient()
 
     // Extract ID from URL or use directly
     const id = circleId.includes('/join/') ? circleId.split('/join/')[1].trim() : circleId.trim()
@@ -38,7 +38,7 @@ export default function JoinCirclePage() {
 
   const handleJoin = async () => {
     setJoining(true)
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     // Check already a member

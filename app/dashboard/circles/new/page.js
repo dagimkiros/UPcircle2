@@ -23,7 +23,7 @@ export default function NewCirclePage() {
   const handleCreate = async () => {
     setLoading(true)
     setError('')
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     // Create circle

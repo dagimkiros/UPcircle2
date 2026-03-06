@@ -6,7 +6,7 @@ function fmt(n) {
 }
 
 export default async function PublicJoinPage({ params }) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: circle } = await supabase
     .from('circles')
     .select('*')

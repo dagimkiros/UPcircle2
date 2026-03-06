@@ -28,7 +28,7 @@ export default function SignupPage() {
     const passResult = validatePassword(form.password)
     if (!passResult.valid) { setError(passResult.error); setLoading(false); return }
 
-    const supabase = createClient()
+    const supabase = await createClient()
 
     const { data, error: signupError } = await supabase.auth.signUp({
       email: cleanEmail,

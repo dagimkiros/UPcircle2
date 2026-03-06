@@ -40,7 +40,7 @@ export default function LoginPage() {
       return
     }
 
-    const supabase = createClient()
+    const supabase = await createClient()
     const { error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password })
     if (error) {
       setAttempts(a => a + 1)
