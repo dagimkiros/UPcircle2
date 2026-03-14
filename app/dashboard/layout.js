@@ -127,9 +127,12 @@ export default async function DashboardLayout({ children }) {
       </div>
 
       {/* ── MAIN CONTENT ── */}
-      <main style={{ marginLeft: '0', flex: 1, padding: '24px 20px', paddingBottom: '96px', paddingTop: '80px' }} className="md:ml-60 md:pt-8 md:pb-8">
+      <main style={{ marginLeft: '240px', flex: 1, padding: '32px', paddingBottom: '40px', paddingTop: '32px', minWidth: 0 }} className="hidden md:block">
         {children}
       </main>
+      <main style={{ flex: 1, padding: '16px', paddingBottom: '80px', paddingTop: '72px' }} className="md:hidden">
+  {children}
+</main>
     </div>
   )
 }
