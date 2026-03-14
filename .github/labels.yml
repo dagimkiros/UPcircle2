@@ -1,0 +1,48 @@
+# Run with: gh label create --force (GitHub CLI)
+# Or create manually at: github.com/dagimkiros/UPcircle2/labels
+
+labels:
+  # Type
+  - name: bug
+    color: d73a4a
+    description: Something is broken
+  - name: security
+    color: e4e669
+    description: Security vulnerability
+  - name: enhancement
+    color: a2eeef
+    description: New feature or improvement
+  - name: deployment
+    color: f9d0c4
+    description: Build or deploy issue
+  - name: ui
+    color: bfd4f2
+    description: Visual or design issue
+
+  # Priority  
+  - name: critical
+    color: b60205
+    description: App breaking — fix immediately
+  - name: high
+    color: e99695
+    description: Major issue — fix this week
+  - name: medium
+    color: fbca04
+    description: Fix soon
+  - name: low
+    color: 0e8a16
+    description: Nice to fix eventually
+
+  # Status
+  - name: needs-triage
+    color: ededed
+    description: Not yet reviewed
+  - name: in-progress
+    color: 0075ca
+    description: Being worked on
+  - name: blocked
+    color: d93f0b
+    description: Blocked by another issue
+  - name: wontfix
+    color: ffffff
+    description: Will not be addressed

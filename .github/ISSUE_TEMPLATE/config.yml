@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 General Question
+    url: https://github.com/dagimkiros/UPcircle2/discussions
+    about: Ask questions or discuss ideas here instead of opening an issue

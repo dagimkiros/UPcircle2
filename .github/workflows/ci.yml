@@ -1,0 +1,149 @@
+name: UpCircle CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+
+  # ─── JOB 1: CODE QUALITY ─────────────────────────────────────────────
+  lint:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint --if-present
+
+      - name: Check for build errors
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+
+  # ─── JOB 2: SELENIUM TESTS ───────────────────────────────────────────
+  selenium-tests:
+    name: Selenium Test Suite
+    runs-on: ubuntu-latest
+    needs: lint  # Only run if lint passes
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          pip install selenium pytest pytest-html
+
+      - name: Setup Chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      - name: Setup ChromeDriver
+        uses: nanasess/setup-chromedriver@v2
+
+      - name: Run Selenium tests against live site
+        run: |
+          python -m pytest components/upcircle_tests.py \
+            --html=test-report.html \
+            --self-contained-html \
+            -v \
+            --tb=short
+        env:
+          BASE_URL: https://upcircle2.vercel.app
+          HEADLESS: true
+        continue-on-error: false  # BLOCK deployment if tests fail
+
+      - name: Upload test report
+        uses: actions/upload-artifact@v4
+        if: always()  # Upload even if tests fail
+        with:
+          name: selenium-test-report
+          path: test-report.html
+          retention-days: 30
+
+  # ─── JOB 3: SECURITY SCAN ────────────────────────────────────────────
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit npm packages for vulnerabilities
+        run: npm audit --audit-level=high
+        continue-on-error: true  # Warn but don't block
+
+      - name: Check for hardcoded secrets
+        run: |
+          echo "Scanning for hardcoded secrets..."
+          # Check for common secret patterns
+          if grep -r "sk_live\|sk_test\|service_role\|eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" \
+            --include="*.js" --include="*.ts" \
+            --exclude-dir=node_modules \
+            --exclude-dir=.next \
+            .; then
+            echo "WARNING: Possible hardcoded secrets found!"
+            exit 1
+          else
+            echo "No hardcoded secrets detected."
+          fi
+
+  # ─── JOB 4: DEPLOY TO VERCEL ─────────────────────────────────────────
+  deploy:
+    name: Deploy to Vercel
+    runs-on: ubuntu-latest
+    needs: [lint, selenium-tests, security]  # ALL jobs must pass
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+
+      - name: Comment deployment URL on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ **Deployment successful!**\n\nAll tests passed. Live at: https://upcircle2.vercel.app'
+            })
