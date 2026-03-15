@@ -1,0 +1,7 @@
+{
+  "name": "Cypress Tester",
+  "email": "test_cypress@mailinator.com",
+  "password": "CypressTest123!",
+  "weakPassword": "weak",
+  "invalidEmail": "notanemail"
+}
