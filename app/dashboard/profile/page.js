@@ -27,7 +27,6 @@ export default async function ProfilePage() {
     .eq('user_id', user.id)
     .eq('status', 'completed')
 
-  // Real calculations
   const totalSaved = contributions?.reduce((s, c) => s + c.amount, 0) || 0
   const totalContributions = contributions?.length || 0
   const onTimeContributions = contributions?.filter(c => c.status === 'paid').length || 0
@@ -35,7 +34,7 @@ export default async function ProfilePage() {
 
   const circleCompletionPct = circleCount > 0 ? Math.round(((completedCircles || 0) / circleCount) * 100) : 0
   const identityVerified = profile?.identity_verified ? 100 : profile?.identity_pending ? 50 : 0
-  const memberFeedback = profile?.feedback_score || null // null = no data yet
+  const memberFeedback = profile?.feedback_score || null
 
   const trustScore = profile?.trust_score || 70
   const initials = profile?.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || user.email[0].toUpperCase()
@@ -74,8 +73,8 @@ export default async function ProfilePage() {
 
   return (
     <div className="space-y-5">
-      {/* Profile header — pt accounts for top nav height */}
-      <div className="rounded-3xl px-6 pb-6 pt-8 text-center" style={{ background: 'linear-gradient(145deg, #0D1F3C, #162D52)' }}>
+      {/* Profile header */}
+      <div className="rounded-3xl px-6 pb-6 pt-6 text-center" style={{ background: 'linear-gradient(145deg, #0D1F3C, #162D52)' }}>
         <div className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-3"
           style={{ background: '#D4A843', color: '#0D1F3C', border: '3px solid rgba(255,255,255,0.2)' }}>
           {initials}

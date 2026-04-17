@@ -1,8 +1,9 @@
+import PayContributionButton from '@/components/PayContributionButton'
+import PaymentStatus from '@/components/PaymentStatus'
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import CopyInviteButton from '@/components/CopyInviteButton'
-import RecordContributionButton from '@/components/RecordContributionButton'
 import DeleteCircleButton from '@/components/DeleteCircleButton'
 
 function fmt(n) {
@@ -39,6 +40,7 @@ export default async function CircleDetailPage({ params, searchParams }) {
   const pot = circle.contribution_amount * circle.total_members
   const progress = Math.round((circle.current_round / circle.total_members) * 100)
   const inviteUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/join/${circle.id}`
+  const alreadyPaid = myMembership?.payment_status === 'current'
 
   return (
     <div className="space-y-5">
@@ -69,7 +71,7 @@ export default async function CircleDetailPage({ params, searchParams }) {
           ].map(s => (
             <div key={s.label} className="rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.07)' }}>
               <p className="text-white/40 text-[9px] tracking-wider font-semibold">{s.label}</p>
-              <p className="text-gold-light font-bold text-lg mt-0.5" style={{ fontFamily: 'DM Serif Display, serif', color: '#F0C96A' }}>{s.val}</p>
+              <p className="font-bold text-lg mt-0.5" style={{ fontFamily: 'DM Serif Display, serif', color: '#F0C96A' }}>{s.val}</p>
             </div>
           ))}
         </div>
@@ -80,6 +82,39 @@ export default async function CircleDetailPage({ params, searchParams }) {
           <p className="text-white/30 text-xs mt-1.5">Round {circle.current_round} of {circle.total_members} · {progress}% complete</p>
         </div>
       </div>
+
+      {/* Payment status banner — shows after redirect from Stripe */}
+      <PaymentStatus />
+
+      {/* Pay contribution button */}
+      {myMembership && ['active', 'forming'].includes(circle.status) && (
+        <div style={{ background: 'white', border: '1.5px solid #EAE3D5', borderRadius: '20px', padding: '20px', boxShadow: '0 2px 12px rgba(13,31,60,0.04)' }}>
+          <p style={{ fontSize: '12px', fontWeight: '700', color: '#9CA3AF', letterSpacing: '1px', marginBottom: '6px' }}>YOUR CONTRIBUTION DUE</p>
+          <p style={{ fontSize: '28px', fontWeight: '900', color: '#0D1F3C', fontFamily: 'DM Serif Display, serif', marginBottom: '4px' }}>{fmt(circle.contribution_amount)}</p>
+          <p style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '16px' }}>Due this round · {circle.frequency}</p>
+          {alreadyPaid && (
+            <p style={{ fontSize: '12px', color: '#4A7C6F', fontWeight: '700', marginBottom: '12px' }}>
+              Already marked paid for this round. You can still open Stripe checkout if needed.
+            </p>
+          )}
+          <PayContributionButton
+            circleId={circle.id}
+            circleName={circle.name}
+            amount={circle.contribution_amount}
+          />
+        </div>
+      )}
+
+      {/* Already paid indicator */}
+      {myMembership && ['active', 'forming'].includes(circle.status) && alreadyPaid && (
+        <div style={{ background: 'rgba(74,124,111,0.08)', border: '1.5px solid rgba(74,124,111,0.2)', borderRadius: '20px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '24px' }}>✅</span>
+          <div>
+            <p style={{ fontSize: '14px', fontWeight: '700', color: '#4A7C6F' }}>Contribution paid for this round</p>
+            <p style={{ fontSize: '12px', color: '#9CA3AF' }}>You're all caught up · Trust score boosted</p>
+          </div>
+        </div>
+      )}
 
       {/* Invite link */}
       {isAdmin && (
@@ -169,14 +204,11 @@ export default async function CircleDetailPage({ params, searchParams }) {
         </div>
       </div>
 
-      {/* Record contribution (admin) */}
+      {/* Admin Actions */}
       {isAdmin && (
         <div className="rounded-2xl p-4" style={{ background: 'white', border: '1px solid #EAE3D5' }}>
           <h3 className="font-bold text-navy mb-3">Admin Actions</h3>
-          <RecordContributionButton circleId={circle.id} members={members} contributionAmount={circle.contribution_amount} />
-          <div className="mt-3 pt-3" style={{ borderTop: '1px solid #EAE3D5' }}>
-            <DeleteCircleButton circleId={circle.id} />
-          </div>
+          <DeleteCircleButton circleId={circle.id} />
         </div>
       )}
 

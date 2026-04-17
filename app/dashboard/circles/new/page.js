@@ -51,7 +51,7 @@ export default function NewCirclePage() {
       user_id: user.id,
       position: 1,
       role: 'admin',
-      payment_status: 'current',
+      payment_status: 'pending',
     })
 
     router.push(`/dashboard/circles/${circle.id}?created=1`)

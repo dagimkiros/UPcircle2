@@ -71,7 +71,7 @@ export default function JoinCirclePage() {
       user_id: user.id,
       position: count + 1,
       role: 'member',
-      payment_status: 'current',
+      payment_status: 'pending',
     })
 
     router.push(`/dashboard/circles/${circle.id}`)
