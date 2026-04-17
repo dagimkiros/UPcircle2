@@ -18,24 +18,71 @@ export default async function ProfilePage() {
 
   const { data: contributions } = await supabase
     .from('contributions')
-    .select('amount')
+    .select('amount, status')
     .eq('user_id', user.id)
 
+  const { count: completedCircles } = await supabase
+    .from('circle_members')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .eq('status', 'completed')
+
+  // Real calculations
   const totalSaved = contributions?.reduce((s, c) => s + c.amount, 0) || 0
+  const totalContributions = contributions?.length || 0
+  const onTimeContributions = contributions?.filter(c => c.status === 'paid').length || 0
+  const onTimePct = totalContributions > 0 ? Math.round((onTimeContributions / totalContributions) * 100) : 100
+
+  const circleCompletionPct = circleCount > 0 ? Math.round(((completedCircles || 0) / circleCount) * 100) : 0
+  const identityVerified = profile?.identity_verified ? 100 : profile?.identity_pending ? 50 : 0
+  const memberFeedback = profile?.feedback_score || null // null = no data yet
+
   const trustScore = profile?.trust_score || 70
   const initials = profile?.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || user.email[0].toUpperCase()
-
   const fmt = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
+
+  const trustItems = [
+    {
+      label: 'On-time payments',
+      val: onTimePct,
+      display: totalContributions === 0 ? 'No data yet' : `${onTimePct}%`,
+      hasData: totalContributions > 0,
+      color: '#4A7C6F',
+    },
+    {
+      label: 'Identity verified',
+      val: identityVerified,
+      display: profile?.identity_verified ? '100%' : 'Pending',
+      hasData: !!profile?.identity_verified,
+      color: '#4A7C6F',
+    },
+    {
+      label: 'Circle completion',
+      val: circleCompletionPct,
+      display: circleCount === 0 ? 'No circles yet' : `${circleCompletionPct}%`,
+      hasData: circleCount > 0,
+      color: '#D4A843',
+    },
+    {
+      label: 'Member feedback',
+      val: memberFeedback,
+      display: memberFeedback ? `${memberFeedback}%` : 'No feedback yet',
+      hasData: !!memberFeedback,
+      color: '#4A7C6F',
+    },
+  ]
 
   return (
     <div className="space-y-5">
-      {/* Profile header */}
-      <div className="rounded-3xl p-6 text-center" style={{ background: 'linear-gradient(145deg, #0D1F3C, #162D52)' }}>
+      {/* Profile header — pt accounts for top nav height */}
+      <div className="rounded-3xl px-6 pb-6 pt-8 text-center" style={{ background: 'linear-gradient(145deg, #0D1F3C, #162D52)' }}>
         <div className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-3"
           style={{ background: '#D4A843', color: '#0D1F3C', border: '3px solid rgba(255,255,255,0.2)' }}>
           {initials}
         </div>
-        <h1 className="text-white text-xl font-bold" style={{ fontFamily: 'DM Serif Display, serif' }}>{profile?.full_name || 'Member'}</h1>
+        <h1 className="text-white text-xl font-bold" style={{ fontFamily: 'DM Serif Display, serif' }}>
+          {profile?.full_name || 'Member'}
+        </h1>
         <p className="text-white/40 text-sm mt-1">{user.email}</p>
         <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full"
           style={{ background: 'rgba(212,168,67,0.15)', border: '1px solid rgba(212,168,67,0.3)' }}>
@@ -49,7 +96,7 @@ export default async function ProfilePage() {
         {[
           { label: 'Circles', val: circleCount || 0 },
           { label: 'Total Saved', val: fmt(totalSaved) },
-          { label: 'On-time %', val: '100%' },
+          { label: 'On-time %', val: totalContributions === 0 ? '—' : `${onTimePct}%` },
         ].map(s => (
           <div key={s.label} className="rounded-2xl p-4 text-center" style={{ background: 'white', border: '1px solid #EAE3D5' }}>
             <p className="font-bold text-navy text-lg" style={{ fontFamily: 'DM Serif Display, serif' }}>{s.val}</p>
@@ -61,19 +108,21 @@ export default async function ProfilePage() {
       {/* Trust score breakdown */}
       <div className="rounded-2xl p-5" style={{ background: 'white', border: '1px solid #EAE3D5' }}>
         <h3 className="font-bold text-navy mb-4" style={{ fontFamily: 'DM Serif Display, serif' }}>Trust Score Breakdown</h3>
-        {[
-          { label: 'On-time payments', val: 100, color: '#4A7C6F' },
-          { label: 'Identity verified', val: 80, color: '#4A7C6F' },
-          { label: 'Circle completion', val: trustScore, color: '#D4A843' },
-          { label: 'Member feedback', val: 90, color: '#4A7C6F' },
-        ].map(item => (
-          <div key={item.label} className="mb-3">
+        {trustItems.map(item => (
+          <div key={item.label} className="mb-4">
             <div className="flex justify-between mb-1.5">
               <span className="text-navy text-sm">{item.label}</span>
-              <span className="text-sm font-bold" style={{ color: item.color }}>{item.val}%</span>
+              <span className="text-sm font-bold" style={{ color: item.hasData ? item.color : '#9CA3AF' }}>
+                {item.display}
+              </span>
             </div>
             <div className="h-1.5 rounded-full" style={{ background: '#EAE3D5' }}>
-              <div className="h-full rounded-full transition-all" style={{ width: `${item.val}%`, background: item.color }} />
+              {item.hasData ? (
+                <div className="h-full rounded-full transition-all"
+                  style={{ width: `${item.val}%`, background: item.color }} />
+              ) : (
+                <div className="h-full rounded-full" style={{ width: '0%' }} />
+              )}
             </div>
           </div>
         ))}
@@ -83,7 +132,7 @@ export default async function ProfilePage() {
       <div className="rounded-2xl overflow-hidden" style={{ background: 'white', border: '1px solid #EAE3D5' }}>
         {[
           { icon: '🔔', label: 'Notifications', sub: 'Enabled' },
-          { icon: '🛡️', label: 'Identity Verification', sub: 'Pending — coming soon' },
+          { icon: '🛡️', label: 'Identity Verification', sub: profile?.identity_verified ? 'Verified ✓' : 'Pending — coming soon' },
           { icon: '🏦', label: 'Linked Bank Account', sub: 'Connect via Plaid — coming soon' },
         ].map((item, i) => (
           <div key={item.label} className="flex items-center gap-3 px-4 py-4 cursor-pointer hover:bg-gray-50"
